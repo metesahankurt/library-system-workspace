@@ -97,6 +97,12 @@ lerna-debug.log*
 .LSOverride
 
 ############################
+# Shadcn local config
+############################
+
+components.json
+
+############################
 # Security
 ############################
 

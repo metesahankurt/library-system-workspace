@@ -1,7 +1,8 @@
 "use client";
 
 import { Menu } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,27 +18,11 @@ interface Navbar22Props {
 }
 
 const Navbar22 = ({ className }: Navbar22Props) => {
-  const [currentTime, setCurrentTime] = useState("");
   const [isOpen, setIsOpen] = useState(false);
-
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      const timeString = now.toLocaleTimeString("en-US", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      });
-      setCurrentTime(timeString);
-    };
-
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
-  }, []);
+  const router = useRouter();
 
   const navLinks = [
-    { name: "Home", href: "#" },
+    { name: "Home", href: "/" },
     { name: "About", href: "#about" },
     { name: "Pricing", href: "#pricing" },
     { name: "Contact", href: "#contact" },
@@ -73,13 +58,8 @@ const Navbar22 = ({ className }: Navbar22Props) => {
                   </a>
                 ))}
               </div>
-              <div className="hidden items-center space-x-2 text-sm text-muted-foreground lg:flex">
-                <span className="font-medium">Erzurum</span>
-                <span className="text-muted-foreground">/</span>
-
-                <span className="font-medium">
-                  {currentTime ? currentTime : "Loading"}
-                </span>
+              <div className="hidden lg:flex">
+                <Button onClick={() => router.push("/login")}>Login</Button>
               </div>
               <div className="md:hidden">
                 <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -116,12 +96,15 @@ const Navbar22 = ({ className }: Navbar22Props) => {
                         ))}
                       </div>
                       <div className="border-t border-border pt-6">
-                        <div className="text-center text-sm text-muted-foreground">
-                          <div className="font-medium">Erzurum</div>
-                          <div className="mt-1">
-                            {currentTime ? currentTime : "Loading"}
-                          </div>
-                        </div>
+                        <Button
+                          className="w-full"
+                          onClick={() => {
+                            setIsOpen(false);
+                            router.push("/login");
+                          }}
+                        >
+                          Login
+                        </Button>
                       </div>
                     </div>
                   </SheetContent>

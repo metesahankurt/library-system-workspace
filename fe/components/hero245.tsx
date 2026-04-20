@@ -18,9 +18,9 @@ const Hero245 = ({ className }: Hero245Props) => {
 
   return (
     <section
-      className={cn("relative grid w-screen overflow-hidden py-32", className)}
+      className={cn("relative w-full overflow-hidden py-32", className)}
     >
-      <div className="relative z-10 container h-full grid-cols-1 items-center justify-center gap-6">
+      <div className="relative z-10 container mx-auto h-full px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center justify-center text-center">
           <div className="mb-10 flex items-center justify-center gap-3 rounded-full bg-muted-foreground/5 p-1 pr-4 text-sm font-medium tracking-tight text-muted-foreground">
             <div className="flex items-center gap-3 rounded-full bg-muted-foreground/10 px-4 py-1.5">

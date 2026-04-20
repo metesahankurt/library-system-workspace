@@ -30,8 +30,8 @@ interface NavbarClientProps {
 
 const navLinks = [
   { name: 'Ana Sayfa', href: '/' },
-  { name: 'Hakkında', href: '#about' },
-  { name: 'İletişim', href: '#contact' },
+  { name: 'Hakkında', href: '/about' },
+  { name: 'İletişim', href: '/contact' },
 ];
 
 export function NavbarClient({

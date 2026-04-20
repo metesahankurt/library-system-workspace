@@ -1,0 +1,103 @@
+{
+  "kind": "collectionType",
+  "collectionName": "books",
+  "info": {
+    "singularName": "book",
+    "pluralName": "books",
+    "displayName": "Book",
+    "description": "Library books"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "author": {
+      "type": "string",
+      "required": true
+    },
+    "publisher": {
+      "type": "string"
+    },
+    "publishYear": {
+      "type": "integer",
+      "min": 1000,
+      "max": 9999
+    },
+    "isbn": {
+      "type": "string"
+    },
+    "bookCode": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "barcodeNumber": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "barcodeImage": {
+      "type": "text"
+    },
+    "frontCover": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "backCover": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "description": {
+      "type": "text"
+    },
+    "pageCount": {
+      "type": "integer",
+      "min": 1
+    },
+    "quantity": {
+      "type": "integer",
+      "required": true,
+      "default": 1,
+      "min": 0
+    },
+    "availableQty": {
+      "type": "integer",
+      "required": true,
+      "default": 1,
+      "min": 0
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["active", "archived", "damaged"],
+      "default": "active",
+      "required": true
+    },
+    "category": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::category.category",
+      "inversedBy": "books"
+    },
+    "reservations": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::reservation.reservation",
+      "mappedBy": "book"
+    },
+    "loans": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::loan.loan",
+      "mappedBy": "book"
+    }
+  }
+}

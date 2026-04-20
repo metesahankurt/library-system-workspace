@@ -1,0 +1,52 @@
+{
+  "kind": "collectionType",
+  "collectionName": "reservations",
+  "info": {
+    "singularName": "reservation",
+    "pluralName": "reservations",
+    "displayName": "Reservation",
+    "description": "Book reservations"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "book": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::book.book",
+      "inversedBy": "reservations"
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "immediate": {
+      "type": "boolean",
+      "default": false
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["pending", "fulfilled", "cancelled", "expired"],
+      "default": "pending",
+      "required": true
+    },
+    "reservedAt": {
+      "type": "datetime"
+    },
+    "expiresAt": {
+      "type": "datetime"
+    },
+    "notes": {
+      "type": "text"
+    },
+    "loan": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::loan.loan",
+      "mappedBy": "reservation"
+    }
+  }
+}

@@ -203,7 +203,7 @@ function buildPageList(current: number, total: number): (number | "...")[] {
 
 export function BookGrid({ books, page, totalPages, total }: BookGridProps) {
   return (
-    <section className="pt-8 pb-16">
+    <section className="relative z-10 -mt-52 pb-16">
       <div className="container">
         <div className="flex items-end justify-between pb-8">
           <div className="flex flex-wrap items-end gap-2">

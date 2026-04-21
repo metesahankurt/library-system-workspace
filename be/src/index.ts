@@ -1,13 +1,36 @@
 import type { Core } from '@strapi/strapi';
 import bcrypt from 'bcryptjs';
+import { seedLibraryData } from './seed';
 
 export default {
   register(/* { strapi }: { strapi: Core.Strapi } */) {},
 
   async bootstrap({ strapi }: { strapi: Core.Strapi }) {
     await seedLibrarianRole({ strapi });
+    await seedPublicBookPermissions({ strapi });
+    await seedLibraryData({ strapi });
   },
 };
+
+async function seedPublicBookPermissions({ strapi }: { strapi: Core.Strapi }) {
+  const publicRole = await strapi.db.query('plugin::users-permissions.role').findOne({
+    where: { type: 'public' },
+  });
+  if (!publicRole) return;
+
+  const actions = ['api::book.book.find', 'api::book.book.findOne', 'api::category.category.find'];
+  for (const action of actions) {
+    const existing = await strapi.db.query('plugin::users-permissions.permission').findOne({
+      where: { action, role: { id: publicRole.id } },
+    });
+    if (!existing) {
+      await strapi.db.query('plugin::users-permissions.permission').create({
+        data: { action, role: publicRole.id },
+      });
+      strapi.log.info(`✅ Public rolüne izin eklendi: ${action}`);
+    }
+  }
+}
 
 async function seedLibrarianRole({ strapi }: { strapi: Core.Strapi }) {
   // Fetch existing roles

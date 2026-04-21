@@ -16,7 +16,7 @@ const Hero232 = ({ className }: Hero232Props) => {
   return (
     <section
       className={cn(
-        "relative h-screen w-screen bg-background py-32",
+        "relative h-[70vh] w-screen bg-background py-16",
         className,
       )}
     >

@@ -1,10 +1,18 @@
-import { Navbar22 } from '@/components/navbar22';
+import { getSession, canAccessDashboard } from '@/lib/auth';
+import { Navbar8 } from '@/components/navbar8';
 
-export default function MainLayout({ children }: { children: React.ReactNode }) {
+export default async function MainLayout({ children }: { children: React.ReactNode }) {
+  const session = await getSession();
+  const showDashboard = canAccessDashboard(session);
+
   return (
     <>
-      <Navbar22 />
-      {children}
+      <Navbar8
+        isLoggedIn={!!session}
+        username={session?.user?.username}
+        showDashboard={showDashboard}
+      />
+      <div className="pt-16">{children}</div>
     </>
   );
 }

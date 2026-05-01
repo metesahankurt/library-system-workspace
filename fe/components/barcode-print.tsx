@@ -34,7 +34,7 @@ const STRAPI_URL = "http://localhost:1337";
 // Label: 38.1mm x 21.2mm
 
 export function BarcodePrint() {
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [books, setBooks] = useState<any[]>([]);
@@ -49,9 +49,9 @@ export function BarcodePrint() {
         const res = await fetch(`${STRAPI_URL}/api/categories?pagination[pageSize]=100`);
         const data = await res.json();
         // Ensure unique, trimmed category names to avoid key collisions
-        const rawCats = data.data?.map((c: any) => (c.attributes?.name || c.name || "").toString().trim()) || [];
-        const uniqueCats = Array.from(new Set(rawCats))
-          .filter(c => c !== "" && c.toLowerCase() !== "all") as string[];
+        const rawCats: string[] = data.data?.map((c: any) => (c.attributes?.name || c.name || "").toString().trim()) || [];
+        const uniqueCats = Array.from(new Set<string>(rawCats))
+          .filter((c: string) => c !== "" && c.toLowerCase() !== "all");
         setCategories(uniqueCats);
       } catch (e) { console.error(e); }
     };
@@ -195,7 +195,7 @@ export function BarcodePrint() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+          <Select value={selectedCategory} onValueChange={(val) => setSelectedCategory(val || "all")}>
             <SelectTrigger className="h-11 rounded-2xl border-0 bg-muted/50 px-4 font-bold">
               <div className="flex items-center gap-2">
                 <Tag className="h-4 w-4 text-muted-foreground" />

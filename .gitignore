@@ -78,3 +78,18 @@ ssl/
 *.temp
 .tmp/
 .temp/
+
+############################
+# Project Specific
+############################
+
+node_modules/
+*.sql
+.next/
+dist/
+build/
+.strapi/
+.strapi-updater.json
+.cache/
+public/uploads/*
+!public/uploads/.gitkeep

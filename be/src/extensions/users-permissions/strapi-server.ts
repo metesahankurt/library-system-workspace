@@ -1,4 +1,12 @@
 export default (plugin: any) => {
+  // Add custom fields to user schema
+  plugin.contentTypes.user.schema.attributes.name = {
+    type: 'string',
+  };
+  plugin.contentTypes.user.schema.attributes.student_id = {
+    type: 'string',
+  };
+
   // Override the `me` controller to always include role info,
   // bypassing sanitization that strips it for custom roles.
   plugin.controllers.user['me'] = async (ctx: any) => {

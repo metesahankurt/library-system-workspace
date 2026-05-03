@@ -9,6 +9,8 @@ export interface SessionUser {
   id: number;
   username: string;
   email: string;
+  name?: string;
+  student_id?: string;
   role: {
     id: number;
     name: string;
@@ -59,6 +61,34 @@ export async function strapiLogin(
   }
 
   return { jwt: data.jwt, user: me as SessionUser };
+}
+
+export async function strapiRegister(
+  email: string,
+  password: string,
+  name: string,
+  student_id: string,
+): Promise<{ jwt: string; user: SessionUser }> {
+  const res = await fetch(`${STRAPI_URL}/api/auth/local/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      username: email, // Strapi requires username, using email as fallback
+      email,
+      password,
+      name,
+      student_id
+    }),
+    cache: 'no-store',
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message ?? 'Kayıt başarısız');
+  }
+
+  const data = await res.json();
+  return { jwt: data.jwt, user: data.user as SessionUser };
 }
 
 // ─── Session helpers (Server-side only) ──────────────────────────────────────

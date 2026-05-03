@@ -13,7 +13,7 @@ export default async function DashboardPage() {
 
   return (
     <Dashboard11
-      className="w-full h-full"
+      className="w-full min-h-screen"
       user={{
         name: user.username,
         email: user.email,

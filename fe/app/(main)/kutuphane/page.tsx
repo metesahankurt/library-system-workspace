@@ -8,7 +8,7 @@ const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL ?? "http://localhost:1337"
 async function fetchBooks(page: number) {
   try {
     const res = await fetch(
-      `${STRAPI_URL}/api/books?populate=category&pagination[page]=${page}&pagination[pageSize]=${PAGE_SIZE}&sort=title:asc`,
+      `${STRAPI_URL}/api/books?populate[category]=true&populate[frontCover]=true&pagination[page]=${page}&pagination[pageSize]=${PAGE_SIZE}&sort=title:asc`,
       { cache: "no-store" },
     );
     if (!res.ok) return { books: [], totalPages: 1, total: 0 };

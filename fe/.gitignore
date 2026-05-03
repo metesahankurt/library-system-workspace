@@ -109,3 +109,5 @@ components.json
 *.pem
 *.key
 *.cert
+
+*.sql

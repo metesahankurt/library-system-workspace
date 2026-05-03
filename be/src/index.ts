@@ -18,7 +18,12 @@ async function seedPublicBookPermissions({ strapi }: { strapi: Core.Strapi }) {
   });
   if (!publicRole) return;
 
-  const actions = ['api::book.book.find', 'api::book.book.findOne', 'api::category.category.find'];
+  const actions = [
+    'api::book.book.find',
+    'api::book.book.findOne',
+    'api::category.category.find',
+    'plugin::users-permissions.auth.register',
+  ];
   for (const action of actions) {
     const existing = await strapi.db.query('plugin::users-permissions.permission').findOne({
       where: { action, role: { id: publicRole.id } },

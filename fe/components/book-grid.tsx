@@ -33,6 +33,7 @@ interface Book {
   status: string;
   pageCount?: number;
   category?: { name: string };
+  frontCover?: { url: string };
 }
 
 interface BookGridProps {
@@ -60,7 +61,11 @@ function BookCard({ book }: { book: Book }) {
   const isAvailable = book.availableQty > 0;
   const categoryName = book.category?.name ?? "Kitap";
   const gradient = CATEGORY_COLORS[categoryName] ?? "from-neutral-800/80 to-neutral-600/80";
-  const coverUrl = `https://covers.openlibrary.org/b/isbn/${book.isbn}-L.jpg`;
+  
+  const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL ?? "http://localhost:1337";
+  const coverUrl = book.frontCover?.url 
+    ? `${STRAPI_URL}${book.frontCover.url}`
+    : `https://covers.openlibrary.org/b/isbn/${book.isbn}-L.jpg`;
 
   return (
     <Card className="group gap-2 rounded-none border-none bg-background p-0 shadow-none">

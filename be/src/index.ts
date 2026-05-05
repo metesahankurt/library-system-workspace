@@ -3,7 +3,7 @@ import bcrypt from 'bcryptjs';
 import { seedLibraryData } from './seed';
 
 export default {
-  register(/* { strapi }: { strapi: Core.Strapi } */) { },
+  register(/* { strapi }: { strapi: Core.Strapi } */) {},
 
   async bootstrap({ strapi }: { strapi: Core.Strapi }) {
     await seedLibrarianRole({ strapi });

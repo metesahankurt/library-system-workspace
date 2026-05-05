@@ -50,9 +50,9 @@ const NAV_BUTTONS: {
   url: string;
   variant: "ghost" | "default" | "link" | "destructive" | "outline" | "secondary";
 }[] = [
-    { label: "Giriş Yap", url: "/login", variant: "ghost" },
-    { label: "Kayıt Ol", url: "/register", variant: "default" },
-  ];
+  { label: "Giriş Yap", url: "/login", variant: "ghost" },
+  { label: "Kayıt Ol", url: "/register", variant: "default" },
+];
 
 const MOBILE_BREAKPOINT = 1024;
 

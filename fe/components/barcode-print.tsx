@@ -33,7 +33,7 @@ const STRAPI_URL = "http://localhost:1337";
 // Grid: 5 columns x 13 rows
 // Label: 38.1mm x 21.2mm
 
-export function BarcodePrint() {
+export function BarcodePrint({ jwt }: { jwt: string }) {
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");

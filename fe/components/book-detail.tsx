@@ -1,229 +1,317 @@
 "use client";
 
 import * as React from "react";
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useTransition } from "react";
 import { 
-  Book as BookIcon, 
+  BookOpen, 
+  Building2, 
+  Calendar, 
+  Hash, 
+  Layers, 
+  MapPin, 
   CheckCircle2, 
-  Clock, 
+  AlertCircle,
+  ArrowRight,
+  ArrowLeft,
+  Share2,
+  BookmarkPlus,
+  Info,
   ChevronRight,
-  Bookmark,
-  Layers,
-  Calendar,
-  Hash,
-  FileText
+  ShieldCheck,
+  Star,
+  Loader2
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import Barcode from "react-barcode";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
+import { createReservation } from "@/app/actions/library";
+import { toast } from "sonner";
 
-interface BookDetailProps {
-  book: {
-    id: number;
-    title: string;
-    author: string;
-    publisher: string;
-    publishYear: number;
-    isbn: string;
-    bookCode: string;
-    availableQty: number;
-    quantity: number;
-    pageCount: number;
-    shelfCode: string;
-    description: string;
-    frontCoverUrl: string;
-    backCoverUrl: string;
-    category: string;
-  };
+export interface BookDetailProps {
+  jwt?: string;
+  book: any;
+  similarBooks?: any[];
 }
 
-export function BookDetail({ book }: BookDetailProps) {
-  const [isFlipped, setIsFlipped] = useState(false);
+export function BookDetail({ jwt, book, similarBooks = [] }: BookDetailProps) {
+  const [isPending, startTransition] = useTransition();
+  const isAvailable = book.availableQty > 0;
+  const categoryName = book.category?.name ?? "Katalog";
+  const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL ?? "http://localhost:1337";
+  
+  const frontCoverUrl = book.frontCover?.url 
+    ? `${STRAPI_URL}${book.frontCover.url}`
+    : (book.isbn ? `https://covers.openlibrary.org/b/isbn/${book.isbn}-L.jpg` : 'https://images.unsplash.com/photo-1543004457-450c09ce9c41?q=80&w=800&auto=format&fit=crop');
+    
+  const backCoverUrl = book.backCover?.url 
+    ? `${STRAPI_URL}${book.backCover.url}`
+    : undefined;
+
+  const handleReservation = () => {
+    startTransition(async () => {
+      const result = await createReservation(book.documentId);
+      if (result.success) {
+        toast.success("Rezervasyon başarıyla oluşturuldu!");
+      } else {
+        toast.error(result.error || "Rezervasyon oluşturulurken bir hata oluştu.");
+      }
+    });
+  };
+
+  const [showBack, setShowBack] = React.useState(false);
 
   return (
-    <div className="max-w-6xl mx-auto p-4 md:p-8 space-y-12 bg-background/50 backdrop-blur-xl rounded-[2.5rem] border border-white/10 shadow-2xl">
-      <div className="grid md:grid-cols-2 gap-12 items-start">
-        {/* 3D Flip Cover Experience */}
-        <div className="flex flex-col items-center gap-8">
+    <div className="min-h-screen bg-[#FDFDFD] text-zinc-900 pb-32">
+      {/* Navigation Header */}
+      <nav className="container pt-8 flex items-center justify-between">
+        <Link 
+          href="/kutuphane" 
+          className="group flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-black transition-all"
+        >
+          <div className="h-8 w-8 rounded-full border border-zinc-100 flex items-center justify-center group-hover:bg-zinc-50 transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+          </div>
+          Kütüphaneye Dön
+        </Link>
+        <div className="flex items-center gap-4">
+           <Button variant="ghost" size="icon" className="rounded-full border border-zinc-100"><Share2 className="h-4 w-4" /></Button>
+           <Button variant="ghost" size="icon" className="rounded-full border border-zinc-100"><BookmarkPlus className="h-4 w-4" /></Button>
+        </div>
+      </nav>
+
+      {/* Main Showcase Section */}
+      <section className="container pt-16 grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-center">
+        
+        {/* Left Side: Staggered Double Covers with Toggle */}
+        <div className="relative flex items-center justify-center py-12 lg:sticky lg:top-24">
           <div 
-            className="relative w-[320px] h-[480px] cursor-pointer group"
-            onClick={() => setIsFlipped(!isFlipped)}
-            style={{ perspective: "1500px" }}
+            className="relative w-[320px] md:w-[400px] aspect-[2/3] cursor-pointer"
+            style={{ perspective: '2000px' }}
+            onClick={() => setShowBack(!showBack)}
           >
-            <motion.div
-              className="w-full h-full relative transition-all duration-700"
-              style={{ transformStyle: "preserve-3d" }}
-              animate={{ rotateY: isFlipped ? 180 : 0 }}
-              transition={{ type: "spring", stiffness: 200, damping: 25 }}
+            {/* Back Cover */}
+            <div 
+              className={cn(
+                "absolute top-0 right-0 w-[90%] h-[95%] shadow-2xl transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)]",
+                showBack ? "z-20 opacity-100" : "z-0 opacity-40"
+              )}
+              style={{ 
+                transform: showBack 
+                  ? 'translateX(0px) translateY(0px) rotateY(0deg)' 
+                  : 'translateX(48px) translateY(-32px) rotateY(-15deg)',
+                transformStyle: 'preserve-3d'
+              }}
             >
-              {/* Front Cover */}
-              <div 
-                className="absolute inset-0 backface-hidden shadow-[0_35px_60px_-15px_rgba(0,0,0,0.5)] rounded-r-2xl overflow-hidden border-y border-r border-white/20"
-                style={{ backfaceVisibility: "hidden" }}
-              >
-                <img 
-                  src={book.frontCoverUrl} 
-                  alt="Ön Kapak" 
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-transparent to-transparent pointer-events-none" />
-                <div className="absolute left-0 inset-y-0 w-2 bg-gradient-to-r from-black/30 to-transparent" />
-              </div>
-
-              {/* Back Cover */}
-              <div 
-                className="absolute inset-0 shadow-[0_35px_60px_-15px_rgba(0,0,0,0.5)] rounded-l-2xl overflow-hidden border-y border-l border-white/20"
-                style={{ 
-                  transform: "rotateY(180deg)",
-                  backfaceVisibility: "hidden"
-                }}
-              >
-                <img 
-                  src={book.backCoverUrl || book.frontCoverUrl} 
-                  alt="Arka Kapak" 
-                  className="w-full h-full object-cover grayscale-[0.2] brightness-[0.4]"
-                />
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-white/90 text-sm leading-relaxed italic text-center font-medium">
-                  <div className="w-12 h-1 bg-white/30 mb-6 rounded-full" />
-                  <p className="line-clamp-[12]">
-                    {book.description || "Bu eser için henüz bir açıklama girilmemiştir."}
-                  </p>
-                  <div className="w-12 h-1 bg-white/30 mt-6 rounded-full" />
+              {backCoverUrl ? (
+                <img src={backCoverUrl} className="w-full h-full object-cover rounded-r-2xl border border-zinc-200" alt="Arka Kapak" />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-r-2xl border border-zinc-700 flex flex-col items-center justify-center p-12 text-center text-white/20">
+                   <div className="h-px w-20 bg-white/10 mb-4" />
+                   <p className="text-[10px] font-black uppercase tracking-widest leading-relaxed">{book.title}</p>
                 </div>
-              </div>
-            </motion.div>
-            
-            <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 text-[10px] font-black uppercase tracking-[0.3em] text-primary/60 animate-pulse bg-primary/5 px-4 py-2 rounded-full border border-primary/10">
-              {isFlipped ? "Kapağı Gör" : "Arka Yüzü Gör"}
+              )}
+              {showBack && <div className="absolute inset-y-0 left-0 w-2 bg-gradient-to-r from-black/20 to-transparent rounded-l-md" />}
             </div>
-          </div>
 
-          <div className="flex gap-6 mt-4">
-            <div className="p-5 bg-gradient-to-br from-primary/5 to-primary/10 rounded-[1.5rem] flex flex-col items-center w-36 border border-primary/20 shadow-lg shadow-primary/5">
-              <span className="text-[9px] uppercase font-black tracking-widest text-primary/60 mb-2">Raf Kodu</span>
-              <span className="font-mono text-xl font-black text-primary tracking-tighter">{book.shelfCode}</span>
+            {/* Front Cover */}
+            <div 
+              className={cn(
+                "absolute top-0 left-0 w-full h-full shadow-[20px_50px_100px_-20px_rgba(0,0,0,0.3)] transition-all duration-1000 ease-[cubic-bezier(0.23,1,0.32,1)]",
+                showBack ? "z-0 opacity-40" : "z-10 opacity-100"
+              )}
+              style={{ 
+                transform: showBack 
+                  ? 'translateX(-48px) translateY(32px) rotateY(15deg) scale(0.9)' 
+                  : 'rotateY(-5deg)',
+                transformStyle: 'preserve-3d'
+              }}
+            >
+              <img src={frontCoverUrl} className="w-full h-full object-cover rounded-r-2xl border border-zinc-200" alt="Ön Kapak" />
+              {!showBack && <div className="absolute inset-y-0 left-0 w-2 bg-gradient-to-r from-black/20 to-transparent rounded-l-md" />}
             </div>
-            <div className="p-5 bg-gradient-to-br from-primary/5 to-primary/10 rounded-[1.5rem] flex flex-col items-center w-36 border border-primary/20 shadow-lg shadow-primary/5">
-              <span className="text-[9px] uppercase font-black tracking-widest text-primary/60 mb-2">Barkod ID</span>
-              <span className="font-mono text-xl font-black text-primary tracking-tighter">{book.bookCode.slice(-4)}</span>
-            </div>
-          </div>
-        </div>
 
-        {/* Info Content */}
-        <div className="space-y-10 lg:pl-6">
-          <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase tracking-widest border border-primary/10">
-              <Bookmark className="size-3 fill-current" />
-              {book.category}
+            {/* Hint Label */}
+            <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-zinc-300">
+               <div className="h-px w-12 bg-zinc-100" />
+               <span className="text-[9px] font-black uppercase tracking-[0.3em]">Diğer tarafı görmek için tıkla</span>
             </div>
-            <h1 className="text-5xl lg:text-6xl font-black tracking-tighter leading-none bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
-              {book.title}
-            </h1>
-            <p className="text-2xl text-muted-foreground/80 font-bold tracking-tight">
-              {book.author}
-            </p>
-          </div>
 
-          <div className="flex flex-wrap gap-4">
-            <div className={cn(
-              "flex items-center gap-3 px-6 py-3 rounded-2xl font-black text-sm tracking-tight border-2 transition-all shadow-lg",
-              book.availableQty > 0 
-                ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 shadow-emerald-500/5" 
-                : "bg-rose-500/10 text-rose-600 border-rose-500/20 shadow-rose-500/5"
-            )}>
-              {book.availableQty > 0 ? <CheckCircle2 className="size-5" /> : <Clock className="size-5" />}
-              {book.availableQty > 0 ? "ÖDÜNÇ ALINABİLİR" : "ŞU AN KÜTÜPHANEDE YOK"}
-            </div>
-            <div className="px-6 py-3 rounded-2xl bg-muted/50 font-black text-sm tracking-tight text-muted-foreground border-2 border-white/5">
-              {book.availableQty} / {book.quantity} KOPYA MEVCUT
-            </div>
-          </div>
-
-          <p className="text-muted-foreground/90 leading-relaxed text-lg font-medium">
-            {book.description || "Bu muhteşem eser kütüphanemizin nadide parçalarından biridir. Okuyucularımıza zengin bir içerik sunan bu kitabı mutlaka keşfedin."}
-          </p>
-
-          <div className="grid grid-cols-2 gap-6 pt-6">
-            <Button size="lg" className="h-16 text-lg font-black tracking-tight shadow-2xl shadow-primary/30 rounded-2xl hover:scale-[1.02] active:scale-[0.98] transition-all" disabled={book.availableQty === 0}>
-              HEMEN ÖDÜNÇ AL
-            </Button>
-            <Button size="lg" variant="outline" className="h-16 text-lg font-black tracking-tight rounded-2xl border-2 hover:bg-muted/50 hover:scale-[1.02] active:scale-[0.98] transition-all" disabled={book.availableQty > 0}>
-              SIRAYA GİR (REZERVASYON)
-            </Button>
-          </div>
-
-          {/* Technical Details Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-8 gap-x-4 p-8 bg-muted/30 rounded-[2rem] border border-white/10 mt-12 relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-4 opacity-[0.03] group-hover:opacity-[0.06] transition-opacity">
-               <BookIcon className="size-32" />
-            </div>
-            
-            <div className="space-y-2 relative">
-              <span className="text-[10px] uppercase font-black tracking-widest opacity-40 flex items-center gap-1.5">
-                <Layers className="size-3 text-primary" /> Yayınevi
-              </span>
-              <div className="font-bold text-base truncate pr-2">{book.publisher}</div>
-            </div>
-            <div className="space-y-2 relative">
-              <span className="text-[10px] uppercase font-black tracking-widest opacity-40 flex items-center gap-1.5">
-                <Calendar className="size-3 text-primary" /> Yayın Yılı
-              </span>
-              <div className="font-bold text-base">{book.publishYear}</div>
-            </div>
-            <div className="space-y-2 relative">
-              <span className="text-[10px] uppercase font-black tracking-widest opacity-40 flex items-center gap-1.5">
-                <Hash className="size-3 text-primary" /> ISBN
-              </span>
-              <div className="font-bold text-base font-mono tracking-tighter">{book.isbn}</div>
-            </div>
-            <div className="space-y-2 relative">
-              <span className="text-[10px] uppercase font-black tracking-widest opacity-40 flex items-center gap-1.5">
-                <FileText className="size-3 text-primary" /> Sayfa
-              </span>
-              <div className="font-bold text-base">{book.pageCount}</div>
-            </div>
-            <div className="space-y-2 relative">
-              <span className="text-[10px] uppercase font-black tracking-widest opacity-40 flex items-center gap-1.5">
-                <Hash className="size-3 text-primary" /> Sistem No
-              </span>
-              <div className="font-bold text-base font-mono tracking-tighter">{book.bookCode}</div>
-            </div>
-            <div className="space-y-2 relative">
-              <span className="text-[10px] uppercase font-black tracking-widest opacity-40 flex items-center gap-1.5">
-                <Layers className="size-3 text-primary" /> Raf Konumu
-              </span>
-              <div className="font-bold text-base tracking-tight">{book.shelfCode}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Recommendations */}
-      <section className="pt-16 border-t border-white/5">
-        <div className="flex items-center justify-between mb-10">
-          <h3 className="text-3xl font-black tracking-tighter uppercase">İLGİNİZİ ÇEKEBİLİR</h3>
-          <Button variant="ghost" className="font-black text-primary text-xs tracking-widest hover:bg-primary/5">
-            HEPSİNİ KEŞFET <ChevronRight className="ml-1 size-4" />
-          </Button>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-8">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="group cursor-pointer space-y-4">
-              <div className="aspect-[2/3] bg-muted/30 rounded-2xl overflow-hidden border border-white/5 shadow-xl transition-all duration-500 group-hover:scale-[1.05] group-hover:shadow-primary/10">
-                <div className="w-full h-full bg-gradient-to-br from-primary/5 via-primary/10 to-primary/20 flex flex-col items-center justify-center p-6 text-center">
-                  <BookIcon className="size-16 opacity-10 group-hover:opacity-20 transition-opacity mb-4" />
-                  <div className="text-[10px] font-black uppercase tracking-widest opacity-30">Benzer Eser</div>
-                </div>
+            {/* Floating Badges - Positioned better to avoid overlap */}
+            <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 z-20 bg-white/90 backdrop-blur-xl p-4 rounded-2xl shadow-2xl border border-zinc-100 flex items-center gap-3 min-w-[180px]">
+              <div className="h-10 w-10 rounded-xl bg-emerald-500 flex items-center justify-center text-white shadow-lg shadow-emerald-200">
+                <ShieldCheck className="h-6 w-6" />
               </div>
               <div>
-                <div className="font-black text-sm group-hover:text-primary transition-colors tracking-tight line-clamp-1">Benzer Kitap İsmi {i}</div>
-                <div className="text-xs font-bold text-muted-foreground/60">Yazar Adı</div>
+                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Durum Bilgisi</p>
+                <p className="text-xs font-black text-emerald-600">Arşiv Kayıtlı</p>
               </div>
             </div>
-          ))}
+          </div>
+        </div>
+
+        {/* Right Side: Information Architecture */}
+        <div className="space-y-12">
+          {/* Header Info */}
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <Badge className="bg-zinc-100 text-zinc-900 border-none rounded-full px-4 py-1 font-black text-[9px] uppercase tracking-widest">
+                {categoryName}
+              </Badge>
+              <div className="flex items-center gap-1 text-amber-500">
+                <Star className="h-3 w-3 fill-current" />
+                <Star className="h-3 w-3 fill-current" />
+                <Star className="h-3 w-3 fill-current" />
+                <Star className="h-3 w-3 fill-current" />
+                <Star className="h-3 w-3 fill-current" />
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <h1 className="text-5xl lg:text-7xl font-black tracking-tight leading-[0.9]">
+                {book.title}
+              </h1>
+              <p className="text-2xl font-bold text-zinc-400 font-serif italic">{book.author}</p>
+            </div>
+
+            <div className="flex items-center gap-4 pt-4">
+               <div className="px-6 py-3 rounded-2xl bg-zinc-50 border border-zinc-100 flex flex-col">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Durum</span>
+                  <div className="flex items-center gap-2">
+                    <div className={cn("h-2 w-2 rounded-full animate-pulse", isAvailable ? "bg-emerald-500" : "bg-amber-500")} />
+                    <span className="text-sm font-black">{isAvailable ? "Müsait" : "Dışarıda"}</span>
+                  </div>
+               </div>
+               <div className="px-6 py-3 rounded-2xl bg-zinc-50 border border-zinc-100 flex flex-col">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Raf No</span>
+                  <span className="text-sm font-black">{book.bookCode}</span>
+               </div>
+               <div className="px-6 py-3 rounded-2xl bg-zinc-50 border border-zinc-100 flex flex-col">
+                  <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Yayın</span>
+                  <span className="text-sm font-black">{book.publishYear || "—"}</span>
+               </div>
+            </div>
+          </div>
+
+          {/* Description Section */}
+          <div className="space-y-6 pt-6 border-t border-zinc-100">
+             <div className="flex items-center gap-3">
+               <div className="h-px w-8 bg-zinc-200" />
+               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-300">Kitap Özeti</span>
+             </div>
+             <p className="text-xl text-zinc-600 leading-relaxed font-medium max-w-2xl">
+               {book.description || "Bu kitap için henüz bir özet bulunmuyor. Kütüphanemizin nadide eserlerinden biri olan bu çalışma, okurlarını bekliyor."}
+             </p>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-wrap gap-4 pt-4">
+            <Button 
+              size="lg" 
+              disabled={isPending} 
+              onClick={handleReservation}
+              className="rounded-2xl h-16 px-12 bg-zinc-900 text-white font-black uppercase tracking-widest shadow-[0_20px_50px_rgba(0,0,0,0.15)] gap-3 hover:scale-[1.02] transition-all border-none min-w-[240px]"
+            >
+              {isPending ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <BookOpen className="h-5 w-5" />
+              )}
+              {isAvailable ? "Hemen Ödünç Al" : "Rezervasyon Yap"}
+            </Button>
+            <Button size="lg" variant="outline" className="rounded-2xl h-16 px-8 border-2 font-black uppercase tracking-widest gap-3">
+              Listeme Ekle
+            </Button>
+          </div>
+
+          {/* Technical Grid (Modern Mini Cards) */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-10">
+            <InfoCard icon={<Building2 className="h-4 w-4" />} label="Yayınevi" value={book.publisher || "Bilinmiyor"} />
+            <InfoCard icon={<Layers className="h-4 w-4" />} label="Sayfa" value={book.pageCount ? `${book.pageCount}` : "—"} />
+            <InfoCard icon={<Hash className="h-4 w-4" />} label="ISBN" value={book.isbn || "—"} />
+          </div>
+
+          {/* Barcode Showcase */}
+          <div className="pt-8">
+            <div className="p-8 rounded-[32px] bg-white border border-zinc-100 shadow-sm flex flex-col md:flex-row items-center justify-between gap-8 group transition-all hover:shadow-md">
+              <div className="space-y-2">
+                 <span className="text-[9px] font-black uppercase tracking-[0.3em] text-zinc-400">Demirbaş Barkodu</span>
+                 <p className="text-sm font-bold text-zinc-600">Sistem Kayıt No: <span className="text-black font-black">{book.barcodeNumber}</span></p>
+              </div>
+              <div className="bg-zinc-50 p-6 rounded-2xl grayscale transition-all group-hover:grayscale-0">
+                <Barcode 
+                  value={book.barcodeNumber} 
+                  height={40} 
+                  width={2} 
+                  fontSize={10} 
+                  margin={0}
+                  background="transparent"
+                  displayValue={false}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </section>
+
+      {/* Recommendations - Gallery Style */}
+      {similarBooks.length > 0 && (
+        <section className="container mt-32 space-y-12">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div className="space-y-3">
+              <h2 className="text-4xl font-black tracking-tight italic">İlginizi Çekebilir</h2>
+              <div className="h-1 w-20 bg-zinc-900" />
+            </div>
+            <Link href="/kutuphane" className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 group border-b-2 border-transparent hover:border-zinc-900 transition-all pb-1">
+              Tüm Kataloğu Keşfedin <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
+          
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-10">
+            {similarBooks.map((simBook) => {
+              const simCoverUrl = simBook.frontCover?.url 
+                ? `${STRAPI_URL}${simBook.frontCover.url}`
+                : `https://covers.openlibrary.org/b/isbn/${simBook.isbn}-L.jpg`;
+                
+              return (
+                <Link key={simBook.id} href={`/kutuphane/${simBook.documentId}`} className="group block">
+                  <div className="aspect-[0.7] overflow-hidden rounded-[24px] shadow-lg transition-all duration-700 group-hover:shadow-2xl group-hover:-translate-y-3 relative">
+                    <img src={simCoverUrl} alt={simBook.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                       <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center text-black">
+                          <ArrowRight className="h-6 w-6" />
+                       </div>
+                    </div>
+                  </div>
+                  <div className="mt-6 space-y-2">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
+                      {simBook.category?.name || categoryName}
+                    </p>
+                    <p className="text-sm font-black leading-tight group-hover:text-primary transition-colors">{simBook.title}</p>
+                    <p className="text-xs font-bold text-zinc-400 font-serif italic">{simBook.author}</p>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}
+
+function InfoCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string | number }) {
+  return (
+    <div className="p-6 rounded-2xl border border-zinc-100 bg-white space-y-3 shadow-sm">
+      <div className="h-8 w-8 rounded-lg bg-zinc-50 flex items-center justify-center text-zinc-400">
+        {icon}
+      </div>
+      <div className="space-y-1">
+        <span className="text-[8px] font-black uppercase tracking-widest text-zinc-400">{label}</span>
+        <p className="text-xs font-black text-zinc-800 line-clamp-1">{value}</p>
+      </div>
     </div>
   );
 }

@@ -22,7 +22,8 @@ import {
   User,
   BookOpen,
   Loader2,
-  Filter
+  Filter,
+  ArrowRight
 } from "lucide-react";
 import {
   Pagination,
@@ -36,64 +37,109 @@ import { cn } from "@/lib/utils";
 
 const STRAPI_URL = "http://localhost:1337";
 
-export function ReservationList() {
+import { lendBookFromReservation } from "@/app/actions/library";
+import { toast } from "sonner";
+
+export function ReservationList({ jwt }: { jwt: string }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [reservations, setReservations] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [processingId, setProcessingId] = useState<string | number | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
   const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
-  useEffect(() => {
-    const fetchReservations = async () => {
-      setIsLoading(true);
-      try {
-        const query = new URLSearchParams({
-          "populate": "*",
-          "pagination[page]": page.toString(),
-          "pagination[pageSize]": pageSize.toString(),
-          "sort": "reserved_at:desc",
-        });
+  const fetchReservations = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const query = new URLSearchParams({
+        "populate[user][fields][0]": "username",
+        "populate[user][fields][1]": "email",
+        "populate[user][fields][2]": "documentId",
+        "populate[book][populate]": "*",
+        "pagination[page]": page.toString(),
+        "pagination[pageSize]": pageSize.toString(),
+        "sort": "createdAt:desc",
+      });
 
-        if (searchTerm) {
-          query.append("filters[$or][0][book][title][$containsi]", searchTerm);
-          query.append("filters[$or][1][user][username][$containsi]", searchTerm);
-        }
-
-        const response = await fetch(`${STRAPI_URL}/api/reservations?${query.toString()}`);
-        const data = await response.json();
-        
-        const normalized = data.data?.map((r: any) => {
-          const attr = r.attributes || r;
-          const book = attr.book?.data?.attributes || attr.book || {};
-          const user = attr.user?.data?.attributes || attr.user || {};
-          
-          return {
-            id: r.id,
-            bookTitle: book.title || "Bilinmeyen Kitap",
-            userName: user.username || user.fullname || "Bilinmeyen Üye",
-            status: attr.status || "waiting",
-            reservedAt: attr.reserved_at || attr.createdAt,
-            expiresAt: attr.expires_at,
-          };
-        }) || [];
-        
-        setReservations(normalized);
-        if (data.meta?.pagination) {
-          setTotalPages(data.meta.pagination.pageCount);
-          setTotalItems(data.meta.pagination.total);
-        }
-      } catch (error) {
-        console.error("Error fetching reservations:", error);
-      } finally {
-        setIsLoading(false);
+      if (searchTerm) {
+        query.append("filters[$or][0][book][title][$containsi]", searchTerm);
+        query.append("filters[$or][1][user][username][$containsi]", searchTerm);
       }
-    };
 
+      const response = await fetch(`${STRAPI_URL}/api/reservations?${query.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${jwt}`
+        }
+      });
+      
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData?.error?.message || `Sunucu hatası: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      // Strapi v5 can return flat data or nested in attributes
+      const rawData = data.data || [];
+      const normalized = rawData.map((r: any) => {
+        const id = r.documentId || r.id; // Prefer documentId for API calls in v5
+        const attr = r.attributes || r;
+        
+        // Handle relations which might be nested or flat
+        const bookData = attr.book?.data?.attributes || attr.book || {};
+        const userData = attr.user?.data?.attributes || attr.user || {};
+        
+        // Strapi v5 Users might have username directly or in attributes
+        const userName = userData.username || userData.fullname || userData.email || "Bilinmeyen Üye";
+        
+        return {
+          id: id,
+          bookTitle: bookData.title || "Bilinmeyen Kitap",
+          userName: userName,
+          status: attr.status || "waiting",
+          reservedAt: attr.reservedAt || attr.createdAt,
+          expiresAt: attr.expiresAt,
+        };
+      });
+      
+      setReservations(normalized);
+      if (data.meta?.pagination) {
+        setTotalPages(data.meta.pagination.pageCount);
+        setTotalItems(data.meta.pagination.total);
+      }
+    } catch (err: any) {
+      console.error("Error fetching reservations:", err);
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     const delayDebounceFn = setTimeout(fetchReservations, searchTerm ? 300 : 0);
     return () => clearTimeout(delayDebounceFn);
   }, [page, searchTerm, pageSize]);
+
+  const handleLend = async (id: string | number) => {
+    setProcessingId(id);
+    try {
+      const result = await lendBookFromReservation(id.toString());
+      if (result.success) {
+        toast.success("Kitap başarıyla ödünç verildi!");
+        fetchReservations(); // Refresh list
+      } else {
+        toast.error(result.error || "İşlem başarısız.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Bir hata oluştu.");
+    } finally {
+      setProcessingId(null);
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
@@ -143,8 +189,8 @@ export function ReservationList() {
                 <th className="p-4 pl-8">Üye Bilgisi</th>
                 <th className="p-4">Kitap Bilgisi</th>
                 <th className="p-4 text-center">Durum</th>
-                <th className="p-4 text-center">Rezervasyon Tarihi</th>
-                <th className="p-4 text-center pr-8">Geçerlilik</th>
+                <th className="p-4 text-center">Tarih</th>
+                <th className="p-4 text-right pr-8">İşlem</th>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -152,6 +198,16 @@ export function ReservationList() {
                 <TableRow>
                   <TableCell colSpan={5} className="h-64 text-center">
                     <Loader2 className="h-10 w-10 animate-spin mx-auto text-amber-500/20" />
+                  </TableCell>
+                </TableRow>
+              ) : error ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-64 text-center">
+                    <div className="flex flex-col items-center gap-2 text-red-500">
+                      <XCircle className="h-10 w-10 opacity-20" />
+                      <p className="font-bold">Hata: {error}</p>
+                      <Button variant="outline" size="sm" onClick={() => fetchReservations()} className="mt-4">Tekrar Dene</Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : reservations.length === 0 ? (
@@ -181,18 +237,25 @@ export function ReservationList() {
                       {getStatusBadge(res.status)}
                     </TableCell>
                     <TableCell className="p-4 text-center font-mono text-xs text-muted-foreground">
-                      {new Date(res.reservedAt).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      {new Date(res.reservedAt).toLocaleDateString('tr-TR')}
                     </TableCell>
-                    <TableCell className="p-4 text-center pr-8">
-                      {res.expiresAt ? (
-                        <div className="flex flex-col items-center">
-                          <span className="text-xs font-bold text-zinc-700">
-                            {new Date(res.expiresAt).toLocaleDateString('tr-TR', { day: '2-digit', month: 'short' })}
-                          </span>
-                          <span className="text-[9px] font-black text-red-500/70 uppercase">Bitiş</span>
-                        </div>
+                    <TableCell className="p-4 text-right pr-8">
+                      {res.status === 'pending' || res.status === 'waiting' ? (
+                        <Button 
+                          size="sm" 
+                          disabled={processingId === res.id}
+                          onClick={() => handleLend(res.id)}
+                          className="h-8 rounded-xl bg-zinc-900 text-white font-black text-[10px] uppercase tracking-wider hover:bg-zinc-800 transition-all shadow-lg shadow-zinc-100 gap-2"
+                        >
+                          {processingId === res.id ? (
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                          ) : (
+                            <ArrowRight className="h-3 w-3" />
+                          )}
+                          Ödünç Ver
+                        </Button>
                       ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
+                        <span className="text-[9px] font-black uppercase text-muted-foreground">Tamamlandı</span>
                       )}
                     </TableCell>
                   </TableRow>

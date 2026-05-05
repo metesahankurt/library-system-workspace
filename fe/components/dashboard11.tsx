@@ -1,6 +1,6 @@
 "use client";
 
-import { useMotionValueEvent, useSpring } from "framer-motion";
+import { motion, AnimatePresence, useMotionValueEvent, useSpring } from "framer-motion";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -25,6 +25,7 @@ import {
   Wallet,
   Plus,
   Scan,
+  X,
 } from "lucide-react";
 import * as React from "react";
 import type { TooltipProps } from "recharts";
@@ -95,6 +96,8 @@ import { ReservationList } from "./reservation-list";
 import { ActiveLoans } from "./active-loans";
 import { BarcodeScanner } from "./barcode-scanner";
 import { LateLoans } from "./late-loans";
+import { SliderList } from "./slider-list";
+import { SliderForm } from "./slider-form";
 
 // ============================================================================
 // Color Palette
@@ -281,6 +284,7 @@ const sidebarData: SidebarData = {
           ],
         },
         { label: "Barkod İşlemleri", icon: Search, href: "BARCODE_PRINT" },
+        { label: "Slider Yönetimi", icon: LayoutDashboard, href: "SLIDERS" },
       ],
     },
     {
@@ -1036,7 +1040,7 @@ const UserRetentionCard = () => {
 
 
 // Main Dashboard Content
-const DashboardContent = ({ stats, loading }: { stats: DashboardStats | null; loading: boolean }) => {
+const DashboardContent = ({ stats, loading, jwt }: { stats: DashboardStats | null; loading: boolean; jwt: string }) => {
   const monthlyData = stats?.monthlyChartData ?? defaultMonthlyData;
   const weeklyData = stats?.weeklyChartData ?? defaultWeeklyData;
   const categoryData = stats?.categoryData ?? defaultCategoryData;
@@ -1077,20 +1081,35 @@ const DashboardContent = ({ stats, loading }: { stats: DashboardStats | null; lo
 const Dashboard11 = ({
   className,
   user: userProp,
+  jwt,
 }: {
   className?: string;
   user?: { name: string; email: string; avatar?: string };
+  jwt: string;
 }) => {
   const [currentView, setCurrentView] = React.useState("OVERVIEW");
   const [stats, setStats] = React.useState<DashboardStats | null>(null);
   const [statsLoading, setStatsLoading] = React.useState(false);
   const [isQuickScannerOpen, setIsQuickScannerOpen] = React.useState(false);
   const [quickScanData, setQuickScanData] = React.useState<any>(null);
+  const [editingSlider, setEditingSlider] = React.useState<any>(null);
+  const [isSliderFormOpen, setIsSliderFormOpen] = React.useState(false);
+
+  const handleAddSlider = () => {
+    setEditingSlider(null);
+    setIsSliderFormOpen(true);
+  };
+
+  const handleEditSlider = (slider: any) => {
+    setEditingSlider(slider);
+    setIsSliderFormOpen(true);
+  };
 
   const handleQuickScan = async (barcode: string) => {
     try {
+      const headers = { Authorization: `Bearer ${jwt}` };
       // 1. Check for active loan
-      const loanRes = await fetch(`${STRAPI_URL}/api/loans?filters[book][barcodeNumber][$eq]=${barcode}&filters[status][$eq]=active&populate=*`);
+      const loanRes = await fetch(`${STRAPI_URL}/api/loans?filters[book][barcodeNumber][$eq]=${barcode}&filters[status][$eq]=active&populate=*`, { headers });
       const loanData = await loanRes.json();
       
       if (loanData.data?.length > 0) {
@@ -1101,7 +1120,7 @@ const Dashboard11 = ({
       }
 
       // 2. Check for reservations
-      const resRes = await fetch(`${STRAPI_URL}/api/reservations?filters[book][barcodeNumber][$eq]=${barcode}&filters[status][$eq]=waiting&populate=*`);
+      const resRes = await fetch(`${STRAPI_URL}/api/reservations?filters[book][barcodeNumber][$eq]=${barcode}&filters[status][$eq]=waiting&populate=*`, { headers });
       const resData = await resRes.json();
 
       if (resData.data?.length > 0) {
@@ -1172,45 +1191,51 @@ const Dashboard11 = ({
           <div className="flex-1 w-full">
             {currentView === "OVERVIEW" ? (
               <div className="p-6">
-                <DashboardContent stats={stats} loading={statsLoading} />
+                <DashboardContent stats={stats} loading={statsLoading} jwt={jwt} />
               </div>
             ) : (
               <div className="w-full p-6 pb-24 bg-muted/5">
                 <div className="max-w-7xl mx-auto">
                   {currentView === "ADD_BOOK" ? (
                     <div className="max-w-xl mx-auto bg-white rounded-3xl shadow-2xl border border-zinc-100 overflow-hidden">
-                      <AddBookForm />
+                      <AddBookForm jwt={jwt} />
                     </div>
                   ) : currentView === "LOANS" ? (
-                    <ActiveLoans initialData={quickScanData} />
+                    <ActiveLoans initialData={quickScanData} jwt={jwt} />
                   ) : currentView === "BOOKS" ? (
-                    <BookList />
+                    <BookList jwt={jwt} />
                   ) : currentView === "BOOK_DETAIL" ? (
-                    <BookDetail book={{
-                      id: 1,
-                      title: "Nutuk",
-                      author: "Mustafa Kemal Atatürk",
-                      publisher: "Yapı Kredi Yayınları",
-                      publishYear: 1927,
-                      isbn: "978-975-08-2015-1",
-                      bookCode: "LIB-982341235",
-                      availableQty: 5,
-                      quantity: 8,
-                      pageCount: 600,
-                      shelfCode: "A-102",
-                      description: "Nutuk, Mustafa Kemal Atatürk'ün 15-20 Ekim 1927 tarihleri arasında, o zamanlar Cumhuriyet Halk Fırkası'nın ikinci büyük kongresinde verdiği, Türkiye Cumhuriyeti'nin kuruluş sürecini anlatan tarihi konuşmasıdır.",
-                      frontCoverUrl: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=300",
-                      backCoverUrl: "",
-                      category: "Tarih"
-                    }} />
+                    <BookDetail 
+                      jwt={jwt} 
+                      book={{
+                        id: 1,
+                        title: "Nutuk",
+                        author: "Mustafa Kemal Atatürk",
+                        publisher: "Yapı Kredi Yayınları",
+                        publishYear: 1927,
+                        isbn: "978-975-08-2015-1",
+                        bookCode: "LIB-982341235",
+                        availableQty: 5,
+                        quantity: 8,
+                        pageCount: 600,
+                        shelfCode: "A-102",
+                        description: "Nutuk, Mustafa Kemal Atatürk'ün 15-20 Ekim 1927 tarihleri arasında, o zamanlar Cumhuriyet Halk Fırkası'nın ikinci büyük kongresinde verdiği, Türkiye Cumhuriyeti'nin kuruluş sürecini anlatan tarihi konuşmasıdır.",
+                        frontCoverUrl: "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&q=80&w=300",
+                        backCoverUrl: "",
+                        category: "Tarih"
+                      }} 
+                      similarBooks={[]}
+                    />
                   ) : currentView === "CATEGORIES" ? (
-                    <CategoryList />
+                    <CategoryList jwt={jwt} />
                   ) : currentView === "BARCODE_PRINT" ? (
-                    <BarcodePrint />
+                    <BarcodePrint jwt={jwt} />
                   ) : currentView === "RESERVATIONS" ? (
-                    <ReservationList />
+                    <ReservationList jwt={jwt} />
                   ) : currentView === "OVERDUE" ? (
-                    <LateLoans />
+                    <LateLoans jwt={jwt} />
+                  ) : currentView === "SLIDERS" ? (
+                    <SliderList onAdd={handleAddSlider} onEdit={handleEditSlider} />
                   ) : (
                     <div className="text-center py-20">
                       <h2 className="text-2xl font-bold mb-2">{currentView}</h2>
@@ -1221,6 +1246,42 @@ const Dashboard11 = ({
               </div>
             )}
           </div>
+
+          <AnimatePresence>
+            {isSliderFormOpen && (
+              <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/40 backdrop-blur-sm">
+                <motion.div
+                  initial={{ x: "100%" }}
+                  animate={{ x: 0 }}
+                  exit={{ x: "100%" }}
+                  transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                  className="h-full w-full max-w-xl bg-white shadow-2xl"
+                >
+                  <div className="flex h-full flex-col">
+                    <div className="flex items-center justify-between border-b px-6 py-4">
+                      <h3 className="text-lg font-black uppercase tracking-tight">Slider Düzenle</h3>
+                      <Button variant="ghost" size="icon" onClick={() => setIsSliderFormOpen(false)}>
+                        <X className="h-5 w-5" />
+                      </Button>
+                    </div>
+                    <div className="flex-1 overflow-hidden">
+                      <SliderForm 
+                        slider={editingSlider} 
+                        onSuccess={() => {
+                          setIsSliderFormOpen(false);
+                          // SliderList handles its own refresh on mount, 
+                          // but since it's already mounted, we might need a refresh trigger.
+                          // For now, re-mounting on view change or a simple refresh works.
+                          setCurrentView("SLIDERS");
+                        }} 
+                      />
+                    </div>
+                  </div>
+                </motion.div>
+                <div className="absolute inset-0 -z-10" onClick={() => setIsSliderFormOpen(false)} />
+              </div>
+            )}
+          </AnimatePresence>
         </SidebarInset>
       </SidebarProvider>
     </ShadTooltipProvider>

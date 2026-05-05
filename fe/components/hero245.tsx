@@ -31,36 +31,38 @@ const Hero245 = ({ className }: Hero245Props) => {
               Join Our Team <ArrowRight className="size-4" />
             </div>
           </div>
-          <h1 className="max-w-2xl text-5xl font-semibold tracking-tighter lg:text-6xl">
-            Elevate Your Next Project With,
-            <PointerHighlight containerClassName="inline-block">
-              <span>Production-Ready</span>
+          <h1 className="max-w-5xl font-playfair text-6xl font-medium tracking-tight lg:text-9xl">
+            Bilginin Kapılarını,
+            <PointerHighlight containerClassName="inline-block px-4">
+              <span className="italic text-primary">Dijitalle</span>
             </PointerHighlight>
-            Shadcnblocks
+            Aralayın
           </h1>
-          <p className="mt-10 max-w-lg text-muted-foreground">
-            Lorem, ipsum dolor sit amet consectetur adipisicing elit. Officiis
-            atque perferendis fugit molestiae quae ad molestias eveniet alias
+          <p className="mt-12 max-w-2xl text-xl font-medium text-muted-foreground/80 tracking-tight leading-relaxed">
+            Binlerce kitap, sınırsız bilgi ve modern kütüphane deneyimi 
+            artık parmaklarınızın ucunda. Keşfetmeye hemen başlayın.
           </p>
 
-          <div className="mt-10 flex w-full flex-col items-center justify-center gap-2">
-            <Button className="rounded-2xl px-6 py-6 text-background shadow-[0px_1px_3px_#0000001a,inset_0px_2px_0px_#ffffff40] md:rounded-3xl md:px-7 md:py-7 md:text-base">
-              <p className="mr-1 text-xl text-background md:mr-3 md:text-2xl">
-                
-              </p>{" "}
-              Download for Mac
+          <div className="mt-10 flex w-full flex-col items-center justify-center gap-4 sm:flex-row">
+            <Button className="rounded-2xl px-8 py-8 text-lg font-black uppercase tracking-widest shadow-2xl transition-all hover:scale-105">
+              Kitapları Keşfet
             </Button>
-            <Button className="text-sm text-muted-foreground" variant="link">
-              Download for Windows
+            <Button variant="outline" className="rounded-2xl px-8 py-8 text-lg font-black uppercase tracking-widest border-2 transition-all hover:bg-zinc-50">
+              Üye Ol
             </Button>
           </div>
         </div>
-        <div className="relative mt-10 flex h-[80vh] w-full items-center justify-center overflow-hidden rounded-4xl border">
-          <img
-            src="https://deifkwefumgah.cloudfront.net/shadcnblocks/block/guri3/img7.jpeg"
-            alt="hero"
+        <div className="relative mt-20 flex h-[80vh] w-full items-center justify-center overflow-hidden rounded-[4rem] border-8 border-white shadow-2xl bg-zinc-100">
+          <video
+            src="https://assets.mixkit.co/videos/preview/mixkit-library-with-many-shelves-and-books-39824-large.mp4"
+            poster="https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&q=80&w=2000"
+            autoPlay
+            loop
+            muted
+            playsInline
             className="size-full object-cover"
           />
+          <div className="absolute inset-0 bg-black/10" />
         </div>
       </div>
       <div className="absolute inset-0 flex h-full w-full items-center justify-between">

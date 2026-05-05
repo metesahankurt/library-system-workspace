@@ -36,7 +36,7 @@ import { CategoryForm } from "./category-form";
 
 const STRAPI_URL = "http://localhost:1337";
 
-export function CategoryList() {
+export function CategoryList({ jwt }: { jwt: string }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [categories, setCategories] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);

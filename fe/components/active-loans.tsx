@@ -46,9 +46,10 @@ const STRAPI_URL = "http://localhost:1337";
 
 interface ActiveLoansProps {
   initialData?: { mode: "lend" | "return"; barcode: string };
+  jwt: string;
 }
 
-export function ActiveLoans({ initialData }: ActiveLoansProps) {
+export function ActiveLoans({ initialData, jwt }: ActiveLoansProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [loans, setLoans] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -69,7 +70,7 @@ export function ActiveLoans({ initialData }: ActiveLoansProps) {
         const query = new URLSearchParams({
           "populate": "*",
           "filters[status][$eq]": "active",
-          "sort": "loan_date:desc",
+          "sort": "createdAt:desc",
         });
 
         if (searchTerm) {
@@ -77,10 +78,13 @@ export function ActiveLoans({ initialData }: ActiveLoansProps) {
           query.append("filters[$or][1][user][username][$containsi]", searchTerm);
         }
 
-        const response = await fetch(`${STRAPI_URL}/api/loans?${query.toString()}`);
+        const response = await fetch(`${STRAPI_URL}/api/loans?${query.toString()}`, {
+          headers: { Authorization: `Bearer ${jwt}` }
+        });
         const data = await response.json();
         
-        const normalized = data.data?.map((l: any) => {
+        const rawData = data.data || [];
+        const normalized = rawData.map((l: any) => {
           const attr = l.attributes || l;
           const book = attr.book?.data?.attributes || attr.book || {};
           const user = attr.user?.data?.attributes || attr.user || {};
@@ -88,12 +92,12 @@ export function ActiveLoans({ initialData }: ActiveLoansProps) {
           return {
             id: l.id,
             bookTitle: book.title || "Bilinmeyen Kitap",
-            userName: user.username || user.fullname || "Bilinmeyen Üye",
-            loanDate: attr.loan_date || attr.createdAt,
-            dueDate: attr.due_date,
+            userName: user.username || user.fullname || user.email || "Bilinmeyen Üye",
+            loanDate: attr.loanedAt || attr.createdAt,
+            dueDate: attr.dueDate,
             status: attr.status,
           };
-        }) || [];
+        });
         
         setLoans(normalized);
       } catch (error) {
@@ -105,7 +109,7 @@ export function ActiveLoans({ initialData }: ActiveLoansProps) {
 
     const t = setTimeout(fetchLoans, searchTerm ? 300 : 0);
     return () => clearTimeout(t);
-  }, [searchTerm, activeTab]);
+  }, [searchTerm, activeTab, jwt]);
 
   const getDueDateStatus = (dueDate: string) => {
     const today = new Date();

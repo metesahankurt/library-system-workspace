@@ -40,7 +40,7 @@ import {
 
 const STRAPI_URL = "http://localhost:1337";
 
-export function BookList() {
+export function BookList({ jwt }: { jwt: string }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [books, setBooks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);

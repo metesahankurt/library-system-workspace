@@ -18,6 +18,7 @@ export default async function DashboardPage() {
         name: user.username,
         email: user.email,
       }}
+      jwt={session!.jwt}
     />
   );
 }

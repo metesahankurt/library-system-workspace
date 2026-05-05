@@ -81,6 +81,7 @@ interface SimilarBook {
 
 interface AddBookFormProps {
   book?: BookData;
+  jwt?: string;
 }
 
 function FieldGroup({ label, icon, children }: { label: string; icon: React.ReactNode; children: React.ReactNode }) {
@@ -95,7 +96,7 @@ function FieldGroup({ label, icon, children }: { label: string; icon: React.Reac
   );
 }
 
-export function AddBookForm({ book }: AddBookFormProps) {
+export function AddBookForm({ book, jwt }: AddBookFormProps) {
   const isEditMode = !!book;
 
   const [bookCode, setBookCode] = React.useState(book?.bookCode ?? "");

@@ -36,7 +36,7 @@ import { cn } from "@/lib/utils";
 
 const STRAPI_URL = "http://localhost:1337";
 
-export function LateLoans() {
+export function LateLoans({ jwt }: { jwt: string }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [loans, setLoans] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);

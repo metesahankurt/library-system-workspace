@@ -1,5 +1,5 @@
 "use client";
-import { LayoutDashboard, LogOut, Menu, UserCircle, X } from "lucide-react";
+import { ArrowRight, LayoutDashboard, LogOut, Menu, UserCircle, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -17,6 +17,8 @@ import {
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
+  NavigationMenuTrigger,
+  NavigationMenuContent,
   navigationMenuTriggerStyle,
 } from "@/components/ui/navigation-menu";
 import {
@@ -36,10 +38,12 @@ const LOGO = {
 
 const NAV_LINKS = [
   { name: "Ana Sayfa", href: "/" },
-  { name: "Kütüphane", href: "/kutuphane" },
+  { name: "Kütüphane", href: "/kutuphane", hasDropdown: true },
   { name: "Hakkında", href: "/about" },
   { name: "İletişim", href: "/contact" },
 ];
+
+const STRAPI_URL = "http://localhost:1337";
 
 const NAV_BUTTONS: {
   label: string;
@@ -62,6 +66,7 @@ interface Navbar8Props {
 const Navbar8 = ({ className, isLoggedIn, username, showDashboard }: Navbar8Props) => {
   const [open, setOpen] = useState<boolean>(false);
   const [scrolled, setScrolled] = useState(false);
+  const [categories, setCategories] = useState<{ id: number, name: string, slug: string }[]>([]);
   const router = useRouter();
 
   async function handleLogout() {
@@ -79,8 +84,25 @@ const Navbar8 = ({ className, isLoggedIn, username, showDashboard }: Navbar8Prop
       setScrolled(window.scrollY > 50);
     };
 
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch(`${STRAPI_URL}/api/categories`);
+        const data = await res.json();
+        if (data.data) {
+          setCategories(data.data.map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            slug: c.slug || c.name.toLowerCase().replace(/ /g, '-'),
+          })));
+        }
+      } catch (e) {
+        console.error("Error fetching categories:", e);
+      }
+    };
+
     handleResize();
     handleScroll();
+    fetchCategories();
 
     window.addEventListener("resize", handleResize);
     window.addEventListener("scroll", handleScroll);
@@ -120,13 +142,89 @@ const Navbar8 = ({ className, isLoggedIn, username, showDashboard }: Navbar8Prop
             {/* Desktop nav links */}
             <NavigationMenu className="hidden lg:flex [&>div:nth-child(2)]:left-1/2 [&>div:nth-child(2)]:-translate-x-1/2">
               <NavigationMenuList>
-                {NAV_LINKS.map((link, index) => (
+                {NAV_LINKS.map((link: any, index) => (
                   <NavigationMenuItem
                     key={`desktop-link-${index}`}
                     value={`${index}`}
-                    className={`${navigationMenuTriggerStyle()} bg-transparent`}
+                    className="bg-transparent"
                   >
-                    <NavigationMenuLink href={link.href}>{link.name}</NavigationMenuLink>
+                    {link.hasDropdown ? (
+                      <>
+                        <NavigationMenuTrigger className="bg-transparent font-medium hover:bg-transparent">
+                          {link.name}
+                        </NavigationMenuTrigger>
+                        <NavigationMenuContent className="min-w-[480px] rounded-[2rem] bg-white p-6 shadow-2xl border border-zinc-100 overflow-hidden">
+                          <div className="grid grid-cols-2 gap-6">
+                            {/* Categories Section */}
+                            <div className="border-r pr-6">
+                              <h4 className="mb-4 text-[9px] font-black uppercase tracking-[0.2em] text-primary/30 px-2">
+                                Öne Çıkanlar
+                              </h4>
+                              <div className="flex flex-col gap-0.5">
+                                {categories.slice(0, 6).map((cat) => (
+                                  <NavigationMenuLink
+                                    key={cat.id}
+                                    href={`/kutuphane?category=${cat.id}`}
+                                    className="group flex items-center gap-3 rounded-xl p-2 transition-all hover:bg-zinc-50"
+                                  >
+                                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-400 transition-colors group-hover:bg-primary group-hover:text-white">
+                                      <Menu className="size-4" />
+                                    </div>
+                                    <span className="text-xs font-bold text-zinc-900 group-hover:text-primary transition-colors">
+                                      {cat.name}
+                                    </span>
+                                  </NavigationMenuLink>
+                                ))}
+                                <NavigationMenuLink
+                                  href="/kutuphane"
+                                  className="mt-2 px-2 text-[10px] font-black text-primary/60 hover:text-primary transition-colors uppercase tracking-widest"
+                                >
+                                  DAHA FAZLA...
+                                </NavigationMenuLink>
+                              </div>
+                            </div>
+
+                            {/* Quick Links Section */}
+                            <div className="flex flex-col gap-6">
+                              <div>
+                                <h4 className="mb-4 text-[9px] font-black uppercase tracking-[0.2em] text-primary/30 px-2">
+                                  Kısayollar
+                                </h4>
+                                <div className="flex flex-col gap-1">
+                                  <NavigationMenuLink
+                                    href="/kutuphane"
+                                    className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-bold text-zinc-700 hover:text-primary transition-colors"
+                                  >
+                                    <ArrowRight className="size-3" /> Tüm Kitaplar
+                                  </NavigationMenuLink>
+                                  <NavigationMenuLink
+                                    href="/kutuphane?sort=newest"
+                                    className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs font-bold text-zinc-700 hover:text-primary transition-colors"
+                                  >
+                                    <ArrowRight className="size-3" /> Yeni Gelenler
+                                  </NavigationMenuLink>
+                                </div>
+                              </div>
+
+                              <div className="mt-auto rounded-2xl bg-zinc-50 p-4 border border-zinc-100">
+                                <h5 className="text-[10px] font-black text-zinc-900 mb-1 uppercase tracking-wider">Haftanın Kitabı</h5>
+                                <p className="text-[10px] text-muted-foreground mb-3 font-medium">Nutuk - Mustafa Kemal Atatürk</p>
+                                <Button size="sm" className="h-7 w-full rounded-lg font-bold uppercase tracking-widest text-[9px] px-2">
+                                  İncele
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </NavigationMenuContent>
+                      </>
+                    ) : (
+                      <NavigationMenuLink 
+                        href={link.href}
+                        className={cn(navigationMenuTriggerStyle(), "bg-transparent font-medium")}
+                      >
+                        {link.name}
+                      </NavigationMenuLink>
+                    )}
                   </NavigationMenuItem>
                 ))}
               </NavigationMenuList>
@@ -235,15 +333,29 @@ const Navbar8 = ({ className, isLoggedIn, username, showDashboard }: Navbar8Prop
               {/* Nav links */}
               <div className="flex flex-col justify-between gap-12 pt-16 pb-12">
                 <ul className="flex flex-col gap-6">
-                  {NAV_LINKS.map((link, i) => (
-                    <li key={i}>
+                  {NAV_LINKS.map((link: any, i) => (
+                    <li key={i} className="flex flex-col gap-2">
                       <a
                         href={link.href}
                         onClick={() => setOpen(false)}
-                        className="text-2xl font-medium leading-normal text-primary-foreground hover:opacity-80 transition-opacity"
+                        className="text-2xl font-black uppercase tracking-tighter leading-normal text-primary-foreground hover:opacity-80 transition-opacity"
                       >
                         {link.name}
                       </a>
+                      {link.hasDropdown && categories.length > 0 && (
+                        <div className="flex flex-wrap gap-2 pl-2">
+                          {categories.slice(0, 6).map((cat) => (
+                            <a
+                              key={cat.id}
+                              href={`/kutuphane?category=${cat.id}`}
+                              onClick={() => setOpen(false)}
+                              className="rounded-full bg-white/10 px-4 py-1.5 text-sm font-bold text-white/80 hover:bg-white/20 transition-all"
+                            >
+                              {cat.name}
+                            </a>
+                          ))}
+                        </div>
+                      )}
                     </li>
                   ))}
                   {showDashboard && (
